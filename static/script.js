@@ -181,7 +181,7 @@ async function updateGridAndStatus(gridData, isFinal = false) {
     });
 
     // Update the possibilities text box
-    possibilityBox.value = gridData.total_possibilities;
+    possibilityBox.value = gridData.total_possibilities - selectedPuzzle.rows.length - selectedPuzzle.cols.length + 1;
 
     // Only clear the status if not preserving status and not a final message
     if (gridData.solved) {
