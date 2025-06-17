@@ -50,3 +50,17 @@
 .unknown {
   background-color: lightgray;
 }
+
+/* Make Step and Solve buttons blue when enabled */
+#stepBtn.btn-secondary:enabled,
+#solveBtn.btn-secondary:enabled {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+}
+#stepBtn.btn-secondary:enabled:hover,
+#solveBtn.btn-secondary:enabled:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    color: #fff;
+}
