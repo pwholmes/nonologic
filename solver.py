@@ -14,6 +14,8 @@ def generate_line_patterns(clue: list[int], length: int) -> list[list[int]]:
     separated by at least one EMPTY cell, and padded with EMPTY cells to fit the exact length.
     """
     def helper(clue_idx: int, pos: int, line: list[int]):
+        if len(line) > length:
+            return
         if clue_idx == len(clue):
             if pos == length:
                 results.append(line)
@@ -33,7 +35,11 @@ def generate_line_patterns(clue: list[int], length: int) -> list[list[int]]:
 
     results: list[list[int]] = []
     helper(0, 0, [])
-    return results
+
+    # Eliminate duplicates
+    unique_results = [list(x) for x in set(tuple(p) for p in results)]
+
+    return unique_results
 
 def intersect_patterns(patterns: list[list[int]]) -> list[int]:
     """
@@ -166,6 +172,10 @@ class NonogramSolver:
         """
         return self.grid
 
+    def get_total_possibilities(self) -> int:
+        """Return the sum of the number of possible patterns for all rows and columns."""
+        return sum(len(poss) for poss in self.row_poss) + sum(len(poss) for poss in self.col_poss)
+
 
 
 # Flask App for Web API
@@ -176,32 +186,31 @@ solver: NonogramSolver | None = None
 def root():
     return send_from_directory('static', 'index.html')
 
-@app.route('/start', methods=['POST'])
-def start():
-    """
-    Initializes a new solver with clues provided in the request JSON:
-    { "rows": [...], "cols": [...] }
-    """
+@app.route("/load", methods=["POST"])
+def load():
     global solver
     data = request.get_json()
-    solver = NonogramSolver(data['rows'], data['cols'])
-    return jsonify({"status": "initialized"})
-
-@app.route('/step', methods=['POST'])
-def step():
-    """
-    Performs a single solving step and returns:
-    - Whether any changes occurred
-    - The current grid state
-    """
-    if solver is None:
-        return jsonify({"error": "Solver not initialized"}), 400
-    changed = solver.step()
-    solved = solver.is_solved()
+    solver = NonogramSolver(data["rows"], data["cols"])
+    grid = solver.get_grid()
     return jsonify({
+        "grid": grid,
+        "solved": solver.is_solved(),
+        "changed": True,
+        "total_possibilities": solver.get_total_possibilities()
+    })
+
+@app.route("/step", methods=["POST"])
+def step():
+    global solver
+    if solver is None:
+        return jsonify({"error": "No puzzle loaded"}), 400
+    changed = solver.step()
+    grid = solver.get_grid()
+    return jsonify({
+        "grid": grid,
+        "solved": solver.is_solved(),
         "changed": changed,
-        "solved": solved,
-        "grid": solver.get_grid(),
+        "total_possibilities": solver.get_total_possibilities()
     })
 
 @app.route('/grid', methods=['GET'])

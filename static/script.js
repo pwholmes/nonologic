@@ -2,6 +2,7 @@ const gridElement = document.getElementById("grid");
 const statusMessage = document.getElementById("statusMessage");
 const rowCluesElement = document.getElementById("rowClues");
 const colCluesElement = document.getElementById("colClues");
+const possibilityBox = document.getElementById("possibilityBox");
 
 // Define multiple puzzles
 const puzzles = [
@@ -102,16 +103,19 @@ loadBtn.addEventListener("click", async () => {
     statusMessage.textContent = "Please wait, loading...";
     statusMessage.style.color = "";
     try {
-        await fetch("/start", {
+        const res = await fetch("/load", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(selectedPuzzle),
         });
+        const data = await res.json();
         stepBtn._forceDisabled = false;
         solveBtn._forceDisabled = false;
         stepBtn.disabled = false;
         solveBtn.disabled = false;
-        await updateGridAndStatus();
+        await updateGridAndStatus(data);
+        if (!data.solved || data.changed)
+            statusMessage.textContent = ""
     } finally {
         setBusy(false);
     }
@@ -125,6 +129,8 @@ stepBtn.addEventListener("click", async () => {
         const res = await fetch("/step", { method: "POST" });
         const data = await res.json();
         await updateGridAndStatus(data);
+        if (!data.solved)
+            statusMessage.textContent = ""
     } finally {
         setBusy(false);
     }
@@ -144,33 +150,27 @@ solveBtn.addEventListener("click", async () => {
             const res = await fetch("/step", { method: "POST" });
             const data = await res.json();
             changed = data.changed;
-            await updateGridAndStatus(data, true, false); // preserveStatus=true, isFinal=false
+            await updateGridAndStatus(data);
             await new Promise(r => setTimeout(r, 200)); // animate delay
         }
         // After solving, show final status (isFinal=true)
-        await updateGridAndStatus(undefined, false, true);
+        await updateGridAndStatus(undefined, true);
     } finally {
         setBusy(false);
         // Step and Solve remain disabled after Solve is complete
     }
 });
 
-async function updateGridAndStatus(stepData, preserveStatus = false, isFinal = false) {
-    // If stepData not passed (like on /start), fetch grid only
-    let data = stepData;
-    if (!data) {
-        const res = await fetch("/grid");
-        data = await res.json();
-    }
-
-    if (!data.grid) return;
+async function updateGridAndStatus(gridData, isFinal = false) {
+    if (!gridData)
+        return;
 
     // Show clues for the selected puzzle
     renderClues(selectedPuzzle);
 
     // Update the grid display
     gridElement.innerHTML = "";
-    data.grid.forEach(row => {
+    gridData.grid.forEach(row => {
         const rowDiv = document.createElement("div");
         row.forEach(cell => {
             const div = document.createElement("div");
@@ -180,15 +180,16 @@ async function updateGridAndStatus(stepData, preserveStatus = false, isFinal = f
         gridElement.appendChild(rowDiv);
     });
 
+    // Update the possibilities text box
+    possibilityBox.value = gridData.total_possibilities;
+
     // Only clear the status if not preserving status and not a final message
-    if (data.solved) {
+    if (gridData.solved) {
         statusMessage.textContent = "Puzzle solved!";
         statusMessage.style.color = "green";
-    } else if (stepData && !stepData.changed) {
+    } else if (!gridData.changed) {
         statusMessage.textContent = "No further progress possible.";
         statusMessage.style.color = "red";
-    } else if (!preserveStatus && !isFinal) {
-        statusMessage.textContent = " ";
     }
 }
 

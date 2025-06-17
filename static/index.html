@@ -18,7 +18,13 @@
     <button id="stepBtn" class="btn btn-secondary ms-4" disabled>Step</button>
     <button id="solveBtn" class="btn btn-secondary" disabled>Solve</button>
   </div>
-  <div id="statusMessage" class="my-2" style="min-height:2em;"></div>
+  <div class="d-flex justify-content-center align-items-center my-2">
+    <label for="possibilityBox" class="me-2 mb-0">Possible solutions:</label>
+    <input id="possibilityBox" type="text" class="form-control form-control-sm w-auto" style="min-width:180px;" readonly value="" title="Total possibilities"/>
+  </div>
+  <div class="d-flex justify-content-center align-items-center my-2">
+    <div id="statusMessage" class="me-3" style="min-height:2em;"></div>
+  </div>
   <div class="d-flex justify-content-center align-items-start grid-wrapper" style="position:relative;">
     <div id="rowClues" class="me-2"></div>
     <div>
